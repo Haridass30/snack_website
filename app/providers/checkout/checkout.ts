@@ -18,12 +18,12 @@ export function generateBraintreeClientToken(options: QueryOptions) {
   return sdk.generateBraintreeClientToken({}, options);
 }
 
-export function generateStripePaymentIntent(
-  orderId: string,
-  options: QueryOptions,
-) {
-  return sdk.generateStripePaymentIntent({ orderId }, options);
-}
+// export function generateStripePaymentIntent(
+//   orderId: string,
+//   options: QueryOptions,
+// ) {
+//   return sdk.generateStripePaymentIntent({ orderId }, options);
+// }
 
 export function getNextOrderStates(options: QueryOptions) {
   return sdk.nextOrderStates({}, options);
@@ -96,19 +96,19 @@ gql`
   }
 `;
 
-gql`
-  mutation generateStripePaymentIntent($orderId: ID!) {
-    generateStripePaymentIntent(orderId: $orderId) {
-      success
-      clientSecret
-      paymentIntentId
-      amount
-      currency
-      publishableKey
-      errorMessage
-    }
-  }
-`;
+// gql`
+//   mutation generateStripePaymentIntent($orderId: ID!) {
+//     generateStripePaymentIntent(orderId: $orderId) {
+//       success
+//       clientSecret
+//       paymentIntentId
+//       amount
+//       currency
+//       publishableKey
+//       errorMessage
+//     }
+//   }
+// `;
 
 gql`
   query generateBraintreeClientToken {

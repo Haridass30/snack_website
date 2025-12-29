@@ -193,7 +193,7 @@ export type Channel = Node & {
   createdAt: Scalars['DateTime'];
   /** @deprecated Use defaultCurrencyCode instead */
   currencyCode: CurrencyCode;
-  customFields?: Maybe<Scalars['JSON']>;
+  customFields?: Maybe<ChannelCustomFields>;
   defaultCurrencyCode: CurrencyCode;
   defaultLanguageCode: LanguageCode;
   defaultShippingZone?: Maybe<Zone>;
@@ -208,6 +208,33 @@ export type Channel = Node & {
   trackInventory?: Maybe<Scalars['Boolean']>;
   updatedAt: Scalars['DateTime'];
 };
+
+export type ChannelAvailability = {
+  __typename?: 'ChannelAvailability';
+  code: Scalars['String'];
+  id: Scalars['ID'];
+  isAvailable: Scalars['Boolean'];
+  message?: Maybe<Scalars['String']>;
+  name: Scalars['String'];
+  token?: Maybe<Scalars['String']>;
+  type: ChannelType;
+};
+
+export type ChannelCustomFields = {
+  __typename?: 'ChannelCustomFields';
+  type?: Maybe<Scalars['String']>;
+};
+
+export enum ChannelType {
+  Brand = 'BRAND',
+  City = 'CITY',
+}
+
+/** Channel type enumeration */
+export enum ChannelTypeEnum {
+  Brand = 'BRAND',
+  City = 'CITY',
+}
 
 export type Collection = Node & {
   __typename?: 'Collection';
@@ -853,6 +880,16 @@ export type CustomerOrdersArgs = {
   options?: InputMaybe<OrderListOptions>;
 };
 
+/** Customer channel information with custom fields */
+export type CustomerChannel = {
+  __typename?: 'CustomerChannel';
+  code: Scalars['String'];
+  id: Scalars['ID'];
+  name: Scalars['String'];
+  token: Scalars['String'];
+  type: ChannelTypeEnum;
+};
+
 export type CustomerCustomFields = {
   __typename?: 'CustomerCustomFields';
   loyaltyPointsAvailable?: Maybe<Scalars['Int']>;
@@ -1303,17 +1340,6 @@ export type GenerateRazorpayOrderIdResult = {
   errorMessage?: Maybe<Scalars['String']>;
   keyId?: Maybe<Scalars['String']>;
   razorpayOrderId?: Maybe<Scalars['String']>;
-  success: Scalars['Boolean'];
-};
-
-export type GenerateStripePaymentIntentResult = {
-  __typename?: 'GenerateStripePaymentIntentResult';
-  amount?: Maybe<Scalars['Int']>;
-  clientSecret?: Maybe<Scalars['String']>;
-  currency?: Maybe<Scalars['String']>;
-  errorMessage?: Maybe<Scalars['String']>;
-  paymentIntentId?: Maybe<Scalars['String']>;
-  publishableKey?: Maybe<Scalars['String']>;
   success: Scalars['Boolean'];
 };
 
@@ -1960,11 +1986,9 @@ export type Mutation = {
   authenticate: AuthenticationResult;
   /** Create a new Customer Address */
   createCustomerAddress: Address;
-  createStripePaymentIntent?: Maybe<Scalars['String']>;
   /** Delete an existing Address */
   deleteCustomerAddress: Success;
   generateRazorpayOrderId: GenerateRazorpayOrderIdResult;
-  generateStripePaymentIntent: GenerateStripePaymentIntentResult;
   /**
    * Authenticates the user using the native authentication strategy. This mutation is an alias for authenticate({ native: { ... }})
    *
@@ -1974,6 +1998,7 @@ export type Mutation = {
   login: NativeAuthenticationResult;
   /** End the current authenticated session */
   logout: Success;
+  /** Add other instructions to the order custom fields */
   otherInstructions: Order;
   /** Regenerate and send a verification token for a new Customer registration. Only applicable if `authOptions.requireVerification` is set to true. */
   refreshCustomerVerification: RefreshCustomerVerificationResult;
@@ -2098,10 +2123,6 @@ export type MutationDeleteCustomerAddressArgs = {
 };
 
 export type MutationGenerateRazorpayOrderIdArgs = {
-  orderId: Scalars['ID'];
-};
-
-export type MutationGenerateStripePaymentIntentArgs = {
   orderId: Scalars['ID'];
 };
 
@@ -2741,6 +2762,8 @@ export enum Permission {
   CreateOrder = 'CreateOrder',
   /** Grants permission to create PaymentMethod */
   CreatePaymentMethod = 'CreatePaymentMethod',
+  /** Grants permission to create PostalCode */
+  CreatePostalCode = 'CreatePostalCode',
   /** Grants permission to create Product */
   CreateProduct = 'CreateProduct',
   /** Grants permission to create Promotion */
@@ -2787,6 +2810,8 @@ export enum Permission {
   DeleteOrder = 'DeleteOrder',
   /** Grants permission to delete PaymentMethod */
   DeletePaymentMethod = 'DeletePaymentMethod',
+  /** Grants permission to delete PostalCode */
+  DeletePostalCode = 'DeletePostalCode',
   /** Grants permission to delete Product */
   DeleteProduct = 'DeleteProduct',
   /** Grants permission to delete Promotion */
@@ -2841,6 +2866,8 @@ export enum Permission {
   ReadOrder = 'ReadOrder',
   /** Grants permission to read PaymentMethod */
   ReadPaymentMethod = 'ReadPaymentMethod',
+  /** Grants permission to read PostalCode */
+  ReadPostalCode = 'ReadPostalCode',
   /** Grants permission to read Product */
   ReadProduct = 'ReadProduct',
   /** Grants permission to read Promotion */
@@ -2891,6 +2918,8 @@ export enum Permission {
   UpdateOrder = 'UpdateOrder',
   /** Grants permission to update PaymentMethod */
   UpdatePaymentMethod = 'UpdatePaymentMethod',
+  /** Grants permission to update PostalCode */
+  UpdatePostalCode = 'UpdatePostalCode',
   /** Grants permission to update Product */
   UpdateProduct = 'UpdateProduct',
   /** Grants permission to update Promotion */
@@ -2917,9 +2946,17 @@ export enum Permission {
 
 export type PhoneOtpInput = {
   code: Scalars['String'];
+  emailAddress?: InputMaybe<Scalars['String']>;
   firstName?: InputMaybe<Scalars['String']>;
   lastName?: InputMaybe<Scalars['String']>;
   phoneNumber: Scalars['String'];
+};
+
+export type PostalCode = {
+  __typename?: 'PostalCode';
+  code: Scalars['String'];
+  id: Scalars['ID'];
+  isAnywhere: Scalars['Boolean'];
 };
 
 /** The price range where the result has more than one price */
@@ -3241,13 +3278,40 @@ export type Query = {
   facets: FacetList;
   frequentlyOrderedProducts: Array<FrequentlyOrderedProduct>;
   generateBraintreeClientToken?: Maybe<Scalars['String']>;
+  /**
+   * Get all channels with availability based on postal code.
+   * Auto-fetches from shipping address if no postal code provided.
+   * Includes channel type (CITY or BRAND) for frontend routing.
+   */
+  getAvailableChannels: Array<ChannelAvailability>;
   getChannelList: Array<Channel>;
-  getChannelsByCustomerEmail: Array<Channel>;
-  getChannelsByCustomerPhoneNumber: Array<Channel>;
+  /**
+   * Get all channels assigned to a customer by email address.
+   * Returns channels with their token for switching stores.
+   * Filters out the default channel automatically.
+   */
+  getChannelsByCustomerEmail: Array<CustomerChannel>;
+  /**
+   * Get all channels assigned to a customer by phone number.
+   * Returns channels with their token for switching stores.
+   * Filters out the default channel automatically.
+   */
+  getChannelsByCustomerPhoneNumber: Array<CustomerChannel>;
+  /**
+   * Get all available channels for a given postal code.
+   * Returns channels that either:
+   * 1. Have this specific postal code assigned
+   * 2. Are set to "Anywhere" mode (serve all postal codes)
+   *
+   * Filters out the default channel automatically.
+   * Useful for showing available channels/brands when customers
+   * enter a postal code or order for friends in different locations.
+   */
+  getChannelsByPostalCode: Array<CustomerChannel>;
   getCouponCodeList: CoupcodesList;
   getPasswordResetToken: Scalars['String'];
   getRazorpayOrderStatus?: Maybe<RazorpayOrderStatus>;
-  getStripePaymentStatus?: Maybe<StripePaymentStatus>;
+  getShippingOptions: Array<ShippingOption>;
   loyaltyPointsConfig?: Maybe<LoyaltyPointsConfig>;
   /** Returns information about the current authenticated User */
   me?: Maybe<CurrentUser>;
@@ -3265,6 +3329,7 @@ export type Query = {
    * general anonymous access to Order data.
    */
   orderByCode?: Maybe<Order>;
+  postalCodes: Array<PostalCode>;
   /** Get a Product either by id or slug. If neither 'id' nor 'slug' is specified, an error will result. */
   product?: Maybe<Product>;
   /** Get a list of Products */
@@ -3298,6 +3363,10 @@ export type QueryFacetsArgs = {
   options?: InputMaybe<FacetListOptions>;
 };
 
+export type QueryGetAvailableChannelsArgs = {
+  postalCode?: InputMaybe<Scalars['String']>;
+};
+
 export type QueryGetChannelsByCustomerEmailArgs = {
   email: Scalars['String'];
 };
@@ -3306,12 +3375,16 @@ export type QueryGetChannelsByCustomerPhoneNumberArgs = {
   phoneNumber: Scalars['String'];
 };
 
+export type QueryGetChannelsByPostalCodeArgs = {
+  postalCode: Scalars['String'];
+};
+
 export type QueryGetRazorpayOrderStatusArgs = {
   orderId: Scalars['ID'];
 };
 
-export type QueryGetStripePaymentStatusArgs = {
-  orderId: Scalars['ID'];
+export type QueryGetShippingOptionsArgs = {
+  input: ShippingRateInput;
 };
 
 export type QueryOrderArgs = {
@@ -3634,6 +3707,27 @@ export type ShippingMethodTranslation = {
   updatedAt: Scalars['DateTime'];
 };
 
+export type ShippingOption = {
+  __typename?: 'ShippingOption';
+  codAvailable: Scalars['Boolean'];
+  courierName: Scalars['String'];
+  description: Scalars['String'];
+  estimatedDeliveryDays: Scalars['String'];
+  etd: Scalars['String'];
+  id: Scalars['String'];
+  name: Scalars['String'];
+  price: Scalars['Money'];
+  trackingAvailable: Scalars['Boolean'];
+};
+
+export type ShippingRateInput = {
+  deliveryPostcode: Scalars['String'];
+  enableCOD?: InputMaybe<Scalars['Boolean']>;
+  orderValue: Scalars['Money'];
+  pickupPostcode: Scalars['String'];
+  weight: Scalars['Float'];
+};
+
 /** The price value where the result has a single price */
 export type SinglePrice = {
   __typename?: 'SinglePrice';
@@ -3696,25 +3790,6 @@ export type StringStructFieldConfig = StructField & {
   pattern?: Maybe<Scalars['String']>;
   type: Scalars['String'];
   ui?: Maybe<Scalars['JSON']>;
-};
-
-export type StripeCharge = {
-  __typename?: 'StripeCharge';
-  amount?: Maybe<Scalars['Int']>;
-  createdAt?: Maybe<Scalars['String']>;
-  failureReason?: Maybe<Scalars['String']>;
-  id: Scalars['String'];
-  paymentMethod?: Maybe<Scalars['String']>;
-  status: Scalars['String'];
-};
-
-export type StripePaymentStatus = {
-  __typename?: 'StripePaymentStatus';
-  amount?: Maybe<Scalars['Int']>;
-  charges?: Maybe<Array<Maybe<StripeCharge>>>;
-  currency?: Maybe<Scalars['String']>;
-  paymentIntentId?: Maybe<Scalars['String']>;
-  status?: Maybe<Scalars['String']>;
 };
 
 export type StructCustomFieldConfig = CustomField & {
@@ -4391,24 +4466,6 @@ export type TransitionOrderToStateMutation = {
     | null;
 };
 
-export type GenerateStripePaymentIntentMutationVariables = Exact<{
-  orderId: Scalars['ID'];
-}>;
-
-export type GenerateStripePaymentIntentMutation = {
-  __typename?: 'Mutation';
-  generateStripePaymentIntent: {
-    __typename?: 'GenerateStripePaymentIntentResult';
-    success: boolean;
-    clientSecret?: string | null;
-    paymentIntentId?: string | null;
-    amount?: number | null;
-    currency?: string | null;
-    publishableKey?: string | null;
-    errorMessage?: string | null;
-  };
-};
-
 export type GenerateBraintreeClientTokenQueryVariables = Exact<{
   [key: string]: never;
 }>;
@@ -4494,11 +4551,10 @@ export type GetChannelsByCustomerEmailQueryVariables = Exact<{
 export type GetChannelsByCustomerEmailQuery = {
   __typename?: 'Query';
   getChannelsByCustomerEmail: Array<{
-    __typename?: 'Channel';
+    __typename?: 'CustomerChannel';
     id: string;
     code: string;
     token: string;
-    defaultCurrencyCode: CurrencyCode;
   }>;
 };
 
@@ -4808,11 +4864,10 @@ export type GetChannelsByCustomerPhonenumberQueryVariables = Exact<{
 export type GetChannelsByCustomerPhonenumberQuery = {
   __typename?: 'Query';
   getChannelsByCustomerPhoneNumber: Array<{
-    __typename?: 'Channel';
+    __typename?: 'CustomerChannel';
     id: string;
     code: string;
     token: string;
-    defaultCurrencyCode: CurrencyCode;
   }>;
 };
 
@@ -7333,19 +7388,6 @@ export const TransitionOrderToStateDocument = gql`
   }
   ${OrderDetailFragmentDoc}
 `;
-export const GenerateStripePaymentIntentDocument = gql`
-  mutation generateStripePaymentIntent($orderId: ID!) {
-    generateStripePaymentIntent(orderId: $orderId) {
-      success
-      clientSecret
-      paymentIntentId
-      amount
-      currency
-      publishableKey
-      errorMessage
-    }
-  }
-`;
 export const GenerateBraintreeClientTokenDocument = gql`
   query generateBraintreeClientToken {
     generateBraintreeClientToken
@@ -7409,7 +7451,6 @@ export const GetChannelsByCustomerEmailDocument = gql`
       id
       code
       token
-      defaultCurrencyCode
     }
   }
 `;
@@ -7458,7 +7499,6 @@ export const GetChannelsByCustomerPhonenumberDocument = gql`
       id
       code
       token
-      defaultCurrencyCode
     }
   }
 `;
@@ -8201,19 +8241,6 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options,
       ) as Promise<TransitionOrderToStateMutation>;
-    },
-    generateStripePaymentIntent(
-      variables: GenerateStripePaymentIntentMutationVariables,
-      options?: C,
-    ): Promise<GenerateStripePaymentIntentMutation> {
-      return requester<
-        GenerateStripePaymentIntentMutation,
-        GenerateStripePaymentIntentMutationVariables
-      >(
-        GenerateStripePaymentIntentDocument,
-        variables,
-        options,
-      ) as Promise<GenerateStripePaymentIntentMutation>;
     },
     generateBraintreeClientToken(
       variables?: GenerateBraintreeClientTokenQueryVariables,

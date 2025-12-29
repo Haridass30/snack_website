@@ -1,13 +1,13 @@
 // Currency to Channel mapping
 export const CURRENCY_CHANNEL_MAP: Record<string, string> = {
   INR: 'Ind-Snacks',
-  USD: 'usd-snacks',
+  USD: 'usd-Snacks',
   //   EUR: 'eur-snacks',
 };
 
 // Country to default channel mapping (for India only)
 export const COUNTRY_CHANNEL_MAP: Record<string, string> = {
-  India: 'ind-snacks',
+  India: 'ind-Snacks',
 };
 
 // Country list
@@ -31,7 +31,7 @@ export const CURRENCY_DISPLAY_NAMES: Record<string, string> = {
 
 // Get channel token for a country (India only has one channel)
 export function getChannelTokenForCountry(country: string): string {
-  return COUNTRY_CHANNEL_MAP[country] || 'usd-snacks';
+  return COUNTRY_CHANNEL_MAP[country] || 'usd-Snacks';
 }
 
 // Get channel token for a currency

@@ -139,7 +139,7 @@ type Channel implements Node {
   code: String!
   createdAt: DateTime!
   currencyCode: CurrencyCode! @deprecated(reason: "Use defaultCurrencyCode instead")
-  customFields: JSON
+  customFields: ChannelCustomFields
   defaultCurrencyCode: CurrencyCode!
   defaultLanguageCode: LanguageCode!
   defaultShippingZone: Zone
@@ -155,6 +155,31 @@ type Channel implements Node {
   """Not yet used - will be implemented in a future release."""
   trackInventory: Boolean
   updatedAt: DateTime!
+}
+
+type ChannelAvailability {
+  code: String!
+  id: ID!
+  isAvailable: Boolean!
+  message: String
+  name: String!
+  token: String
+  type: ChannelType!
+}
+
+type ChannelCustomFields {
+  type: String
+}
+
+enum ChannelType {
+  BRAND
+  CITY
+}
+
+"""Channel type enumeration"""
+enum ChannelTypeEnum {
+  BRAND
+  CITY
 }
 
 type Collection implements Node {
@@ -917,6 +942,15 @@ type Customer implements Node {
   user: User
 }
 
+"""Customer channel information with custom fields"""
+type CustomerChannel {
+  code: String!
+  id: ID!
+  name: String!
+  token: String!
+  type: ChannelTypeEnum!
+}
+
 type CustomerCustomFields {
   loyaltyPointsAvailable: Int
 }
@@ -1370,16 +1404,6 @@ type GenerateRazorpayOrderIdResult {
   errorMessage: String
   keyId: String
   razorpayOrderId: String
-  success: Boolean!
-}
-
-type GenerateStripePaymentIntentResult {
-  amount: Int
-  clientSecret: String
-  currency: String
-  errorMessage: String
-  paymentIntentId: String
-  publishableKey: String
   success: Boolean!
 }
 
@@ -2204,12 +2228,10 @@ type Mutation {
 
   """Create a new Customer Address"""
   createCustomerAddress(input: CreateAddressInput!): Address!
-  createStripePaymentIntent: String
 
   """Delete an existing Address"""
   deleteCustomerAddress(id: ID!): Success!
   generateRazorpayOrderId(orderId: ID!): GenerateRazorpayOrderIdResult!
-  generateStripePaymentIntent(orderId: ID!): GenerateStripePaymentIntentResult!
 
   """
   Authenticates the user using the native authentication strategy. This mutation is an alias for authenticate({ native: { ... }})
@@ -2221,6 +2243,8 @@ type Mutation {
 
   """End the current authenticated session"""
   logout: Success!
+
+  """Add other instructions to the order custom fields"""
   otherInstructions(orderId: ID!, value: String!): Order!
 
   """
@@ -2908,6 +2932,9 @@ enum Permission {
   """Grants permission to create PaymentMethod"""
   CreatePaymentMethod
 
+  """Grants permission to create PostalCode"""
+  CreatePostalCode
+
   """Grants permission to create Product"""
   CreateProduct
 
@@ -2978,6 +3005,9 @@ enum Permission {
 
   """Grants permission to delete PaymentMethod"""
   DeletePaymentMethod
+
+  """Grants permission to delete PostalCode"""
+  DeletePostalCode
 
   """Grants permission to delete Product"""
   DeleteProduct
@@ -3062,6 +3092,9 @@ enum Permission {
   """Grants permission to read PaymentMethod"""
   ReadPaymentMethod
 
+  """Grants permission to read PostalCode"""
+  ReadPostalCode
+
   """Grants permission to read Product"""
   ReadProduct
 
@@ -3139,6 +3172,9 @@ enum Permission {
   """Grants permission to update PaymentMethod"""
   UpdatePaymentMethod
 
+  """Grants permission to update PostalCode"""
+  UpdatePostalCode
+
   """Grants permission to update Product"""
   UpdateProduct
 
@@ -3177,9 +3213,16 @@ enum Permission {
 
 input PhoneOtpInput {
   code: String!
+  emailAddress: String
   firstName: String
   lastName: String
   phoneNumber: String!
+}
+
+type PostalCode {
+  code: String!
+  id: ID!
+  isAnywhere: Boolean!
 }
 
 """The price range where the result has more than one price"""
@@ -3505,13 +3548,44 @@ type Query {
   facets(options: FacetListOptions): FacetList!
   frequentlyOrderedProducts: [FrequentlyOrderedProduct!]!
   generateBraintreeClientToken: String
+
+  """
+  Get all channels with availability based on postal code.
+  Auto-fetches from shipping address if no postal code provided.
+  Includes channel type (CITY or BRAND) for frontend routing.
+  """
+  getAvailableChannels(postalCode: String): [ChannelAvailability!]!
   getChannelList: [Channel!]!
-  getChannelsByCustomerEmail(email: String!): [Channel!]!
-  getChannelsByCustomerPhoneNumber(phoneNumber: String!): [Channel!]!
+
+  """
+  Get all channels assigned to a customer by email address.
+  Returns channels with their token for switching stores.
+  Filters out the default channel automatically.
+  """
+  getChannelsByCustomerEmail(email: String!): [CustomerChannel!]!
+
+  """
+  Get all channels assigned to a customer by phone number.
+  Returns channels with their token for switching stores.
+  Filters out the default channel automatically.
+  """
+  getChannelsByCustomerPhoneNumber(phoneNumber: String!): [CustomerChannel!]!
+
+  """
+  Get all available channels for a given postal code.
+  Returns channels that either:
+  1. Have this specific postal code assigned
+  2. Are set to "Anywhere" mode (serve all postal codes)
+  
+  Filters out the default channel automatically.
+  Useful for showing available channels/brands when customers
+  enter a postal code or order for friends in different locations.
+  """
+  getChannelsByPostalCode(postalCode: String!): [CustomerChannel!]!
   getCouponCodeList: CoupcodesList!
   getPasswordResetToken: String!
   getRazorpayOrderStatus(orderId: ID!): RazorpayOrderStatus
-  getStripePaymentStatus(orderId: ID!): StripePaymentStatus
+  getShippingOptions(input: ShippingRateInput!): [ShippingOption!]!
   loyaltyPointsConfig: LoyaltyPointsConfig
 
   """Returns information about the current authenticated User"""
@@ -3535,6 +3609,7 @@ type Query {
   general anonymous access to Order data.
   """
   orderByCode(code: String!): Order
+  postalCodes: [PostalCode!]!
 
   """
   Get a Product either by id or slug. If neither 'id' nor 'slug' is specified, an error will result.
@@ -3808,6 +3883,26 @@ type ShippingMethodTranslation {
   updatedAt: DateTime!
 }
 
+type ShippingOption {
+  codAvailable: Boolean!
+  courierName: String!
+  description: String!
+  estimatedDeliveryDays: String!
+  etd: String!
+  id: String!
+  name: String!
+  price: Money!
+  trackingAvailable: Boolean!
+}
+
+input ShippingRateInput {
+  deliveryPostcode: String!
+  enableCOD: Boolean
+  orderValue: Money!
+  pickupPostcode: String!
+  weight: Float!
+}
+
 """The price value where the result has a single price"""
 type SinglePrice {
   value: Money!
@@ -3866,23 +3961,6 @@ type StringStructFieldConfig implements StructField {
   pattern: String
   type: String!
   ui: JSON
-}
-
-type StripeCharge {
-  amount: Int
-  createdAt: String
-  failureReason: String
-  id: String!
-  paymentMethod: String
-  status: String!
-}
-
-type StripePaymentStatus {
-  amount: Int
-  charges: [StripeCharge]
-  currency: String
-  paymentIntentId: String
-  status: String
 }
 
 type StructCustomFieldConfig implements CustomField {

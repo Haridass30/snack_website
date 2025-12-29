@@ -30,11 +30,10 @@ export async function getChannelList(p0: {
 }): Promise<WithHeaders<GetChannelListQuery['getChannelList']>> {
   return sdk.getChannelList().then((res) => {
     const allChannels = res.getChannelList;
-    const allowedCities = ['Madurai', 'Coimbatore', 'Trichy', 'Salem'];
-    const filteredChannels = allChannels.filter(
-      (channel) =>
-        channel.code !== '__default_channel__' &&
-        allowedCities.includes(channel.code),
+    // Only return the two default India channels: Ind-Snacks and usd-Snacks
+    const allowedChannels = ['Ind-Snacks', 'usd-Snacks'];
+    const filteredChannels = allChannels.filter((channel) =>
+      allowedChannels.includes(channel.code),
     );
 
     const result = Object.assign([...filteredChannels], {
@@ -196,7 +195,7 @@ gql`
       id
       code
       token
-      defaultCurrencyCode
+      # defaultCurrencyCode - not available on CustomerChannel type
     }
   }
 `;
@@ -270,7 +269,7 @@ gql`
       id
       code
       token
-      defaultCurrencyCode
+      # defaultCurrencyCode - not available on CustomerChannel type
     }
   }
 `;
@@ -647,10 +646,12 @@ export async function getLoyaltyPointsConfig(options?: {
   if (!response || !response.loyaltyPointsConfig) {
     return undefined;
   }
+  // Type assertion needed because generated types don't include defaultCurrencyCode
+  // even though the query fetches it. This will be fixed when types are regenerated.
   return {
     ...response.loyaltyPointsConfig,
     _headers: response._headers,
-  };
+  } as WithHeaders<LoyaltyPointsConfig>;
 }
 
 gql`

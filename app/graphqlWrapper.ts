@@ -32,6 +32,15 @@ function getChannelTokenFromCookie(request?: Request): string | null {
   return cookies['channel-token'] || null;
 }
 
+// Valid channel tokens that exist in the backend
+// Only include tokens that are confirmed to exist
+const VALID_CHANNEL_TOKENS = ['Ind-Snacks'];
+
+// Validate if a channel token is valid
+function isValidChannelToken(token: string): boolean {
+  return VALID_CHANNEL_TOKENS.includes(token);
+}
+
 // Get channel token dynamically from localStorage, cookie, or default
 function getChannelToken(request?: Request): string {
   if (typeof window !== 'undefined') {
@@ -41,7 +50,7 @@ function getChannelToken(request?: Request): string {
   // Server-side: try to get from cookie
   if (request) {
     const cookieToken = getChannelTokenFromCookie(request);
-    if (cookieToken) {
+    if (cookieToken && isValidChannelToken(cookieToken)) {
       return cookieToken;
     }
   }

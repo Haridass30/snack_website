@@ -18,7 +18,7 @@ import {
   getAvailableCountries,
   getEligibleShippingMethods,
   getEligiblePaymentMethods,
-  generateStripePaymentIntent,
+  // generateStripePaymentIntent,
   generateBraintreeClientToken,
   getNextOrderStates,
   transitionOrderToState,
@@ -194,29 +194,29 @@ export async function loader({ request }: DataFunctionArgs) {
   let stripeError: string | undefined;
   let brainTreeKey: string | undefined;
   let brainTreeError: string | undefined;
-  if (eligiblePaymentMethods.find((method) => method.code.includes('stripe'))) {
-    try {
-      if (!activeOrder?.id) {
-        stripeError = 'No active order found';
-      } else {
-        const stripePaymentIntentResult = await generateStripePaymentIntent(
-          activeOrder.id,
-          { request },
-        );
-        const result = stripePaymentIntentResult.generateStripePaymentIntent;
+  // if (eligiblePaymentMethods.find((method) => method.code.includes('stripe'))) {
+  //   try {
+  //     if (!activeOrder?.id) {
+  //       stripeError = 'No active order found';
+  //     } else {
+  //       const stripePaymentIntentResult = await generateStripePaymentIntent(
+  //         activeOrder.id,
+  //         { request },
+  //       );
+  //       const result = stripePaymentIntentResult.generateStripePaymentIntent;
 
-        if (result?.success) {
-          stripePaymentIntent = result.clientSecret || '';
-          stripePublishableKey = result.publishableKey || '';
-        } else {
-          stripeError =
-            result?.errorMessage || 'Failed to create payment intent';
-        }
-      }
-    } catch (e: any) {
-      stripeError = e.message;
-    }
-  }
+  //       if (result?.success) {
+  //         stripePaymentIntent = result.clientSecret || '';
+  //         stripePublishableKey = result.publishableKey || '';
+  //       } else {
+  //         stripeError =
+  //           result?.errorMessage || 'Failed to create payment intent';
+  //       }
+  //     }
+  //   } catch (e: any) {
+  //     stripeError = e.message;
+  //   }
+  // }
   if (
     eligiblePaymentMethods.find((method) => method.code.includes('braintree'))
   ) {
