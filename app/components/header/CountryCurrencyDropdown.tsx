@@ -18,7 +18,7 @@ import { CurrencyCode } from '~/generated/graphql';
 // Available currencies
 const AVAILABLE_CURRENCIES = [
   CurrencyCode.Inr,
-  CurrencyCode.Usd,
+  // CurrencyCode.Usd,
   // CurrencyCode.Eur,
 ] as const;
 

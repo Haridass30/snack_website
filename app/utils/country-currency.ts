@@ -1,7 +1,7 @@
 // Currency to Channel mapping
 export const CURRENCY_CHANNEL_MAP: Record<string, string> = {
   INR: 'Ind-Snacks',
-  USD: 'usd-Snacks',
+  // USD: 'usd-Snacks',
   //   EUR: 'eur-snacks',
 };
 
@@ -13,26 +13,26 @@ export const COUNTRY_CHANNEL_MAP: Record<string, string> = {
 // Country list
 export const COUNTRIES = [
   'India',
-  'Singapore',
-  'Malaysia',
-  'Sri Lanka',
-  'Australia',
-  'Canada',
-  'UK',
-  'USA',
+  // 'Singapore',
+  // 'Malaysia',
+  // 'Sri Lanka',
+  // 'Australia',
+  // 'Canada',
+  // 'UK',
+  // 'USA',
 ] as const;
 
 // Currency display names
 export const CURRENCY_DISPLAY_NAMES: Record<string, string> = {
-  USD: 'USD',
+  // USD: 'USD',
   //   EUR: 'EUR',
   INR: 'INR',
 };
 
 // Get channel token for a country (India only has one channel)
-export function getChannelTokenForCountry(country: string): string {
-  return COUNTRY_CHANNEL_MAP[country] || 'usd-Snacks';
-}
+// export function getChannelTokenForCountry(country: string): string {
+//   return COUNTRY_CHANNEL_MAP[country] || 'usd-Snacks';
+// }
 
 // Get channel token for a currency
 export function getChannelTokenForCurrency(currency: string): string {
@@ -40,11 +40,14 @@ export function getChannelTokenForCurrency(currency: string): string {
 }
 
 // Get default currency for a country
-export function getDefaultCurrencyForCountry(country: string): string {
+export function getDefaultCurrencyForCountry(
+  country: string,
+): string | undefined {
   if (country === 'India') {
     return 'INR';
   }
-  return 'USD';
+  // return 'USD';
+  return undefined;
 }
 
 // Storage keys
@@ -67,13 +70,13 @@ export function setStoredCountry(countryCode: string): void {
   if (country) {
     // For India, use ind-snacks, otherwise use currency-based channel
     if (country.name === 'India') {
-      const channelToken = getChannelTokenForCountry(country.name);
+      const channelToken = COUNTRY_CHANNEL_MAP[country.name] || 'Ind-Snacks';
       localStorage.setItem(STORAGE_KEY_CHANNEL, channelToken);
     } else {
       // For other countries, use currency to determine channel
-      const currency = getStoredCurrency() || 'USD';
-      const channelToken = getChannelTokenForCurrency(currency);
-      localStorage.setItem(STORAGE_KEY_CHANNEL, channelToken);
+      // const currency = getStoredCurrency() || 'USD';
+      // const channelToken = getChannelTokenForCurrency(currency);
+      // localStorage.setItem(STORAGE_KEY_CHANNEL, channelToken);
     }
   }
 }
@@ -149,7 +152,7 @@ export const STATIC_COUNTRIES = [
 // Currency to countries mapping
 export const CURRENCY_COUNTRIES_MAP: Record<string, string[]> = {
   INR: ['IN'], // Only India for INR
-  USD: ['US', 'CA', 'AU', 'SG', 'MY', 'LK', 'GB'], // USD-using countries
+  // USD: ['US', 'CA', 'AU', 'SG', 'MY', 'LK', 'GB'], // USD-using countries
   // EUR: ['IT', 'ES', 'FR', 'DE', 'NL', 'BE', 'AT', 'PT', 'IE', 'GR'], // European countries
 };
 
