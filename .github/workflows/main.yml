@@ -11,26 +11,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Run deploy script on EC2
+      - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
+          username: ${{ secrets.REMOTE_USER }}   # must be ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
+
             cd /home/ubuntu/Web_Pro/snack_website
-            sudo git reset --hard HEAD
-            sudo git clean -fd
-            sudo git pull origin main      
-            sudo npm install -g pnpm
-            sudo pnpm install
-            sudo pnpm build
-            # Check if PM2 is running a process named "snack"
-            if pm2 list | grep -q "snack"; then
-              echo "🔁 PM2 process 'snack' exists. Restarting..."
+
+            echo "📦 Pulling latest code"
+            git fetch origin
+            git reset --hard origin/main
+            git clean -fd
+
+            echo "📦 Installing dependencies"
+            pnpm install --frozen-lockfile
+
+            echo "🏗️ Building project"
+            pnpm build
+
+            echo "🚀 Restarting PM2"
+            if pm2 describe snack > /dev/null; then
               pm2 restart snack
             else
-              echo "▶️ PM2 process 'snack' not found. Starting..."
               pm2 start npm --name "snack" -- start
-          
             fi
+
+            pm2 save
